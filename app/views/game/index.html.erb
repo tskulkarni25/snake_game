@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Snake Game</title>
+    <style>
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: #fff; font-family: Arial, sans-serif; }
+        canvas { background-color: #fff; }
+        .container { text-align: center; }
+        .game-over { display: none; color: red; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Snake Game</h1>
+      <canvas id="gameCanvas" width="400" height="400"></canvas>
+      <div class="controls">
+        <label for="speed">Choose speed:</label>
+        <input type="range" id="speed" name="speed" min="1" max="10" value="5">
+        <button id="startBtn">Start Game</button>
+      </div>
+      <div class="game-over" id="gameOver">
+        <h3>Game Over</h3>
+        <button id="restartBtn">Restart</button>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const canvas = $('#gameCanvas')[0];
+            const ctx = canvas.getContext('2d');
+            const gameOverMsg = $('#gameOver');
+
+            const box = 20;
+            let snake = [{ x: 9 * box, y: 10 * box }];
+            let direction = 'RIGHT';
+            let changingDirection = false;
+
+            let food = {
+                x: Math.floor(Math.random() * 19 + 1) * box,
+                y: Math.floor(Math.random() * 19 + 1) * box
+            };
+
+            let speed = parseInt($('#speed').val());
+            let game;
+
+            $(document).keydown(changeDirection);
+
+            function changeDirection(event) {
+                if (changingDirection) return;
+                changingDirection = true;
+
+                const keyPressed = event.keyCode;
+                const goingUp = direction === 'UP';
+                const goingDown = direction === 'DOWN';
+                const goingRight = direction === 'RIGHT';
+                const goingLeft = direction === 'LEFT';
+
+                if (keyPressed === 37 && !goingRight) {
+                    direction = 'LEFT';
+                }
+                if (keyPressed === 38 && !goingDown) {
+                    direction = 'UP';
+                }
+                if (keyPressed === 39 && !goingLeft) {
+                    direction = 'RIGHT';
+                }
+                if (keyPressed === 40 && !goingUp) {
+                    direction = 'DOWN';
+                }
+            }
+
+            function collision(newHead, snake) {
+                for (let i = 0; i < snake.length; i++) {
+                    if (newHead.x === snake[i].x && newHead.y === snake[i].y) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function drawSnakePart(snakePart) {
+                ctx.fillStyle = 'green';
+                ctx.fillRect(snakePart.x, snakePart.y, box, box);
+                ctx.strokeStyle = 'red';
+                ctx.strokeRect(snakePart.x, snakePart.y, box, box);
+            }
+
+            function drawFood() {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(food.x, food.y, box, box);
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                snake.forEach(drawSnakePart);
+                drawFood();
+
+                let snakeX = snake[0].x;
+                let snakeY = snake[0].y;
+
+                if (direction === 'LEFT') snakeX -= box;
+                if (direction === 'UP') snakeY -= box;
+                if (direction === 'RIGHT') snakeX += box;
+                if (direction === 'DOWN') snakeY += box;
+
+                const newHead = { x: snakeX, y: snakeY };
+
+                if (snakeX < 0 || snakeY < 0 || snakeX >= canvas.width || snakeY >= canvas.height || collision(newHead, snake)) {
+                    clearInterval(game);
+                    gameOverMsg.show();
+                }
+
+                snake.unshift(newHead);
+
+                // Check if the snake eats the food
+                if (newHead.x === food.x && newHead.y === food.y) {
+                    // Generate new food location
+                    food = {
+                        x: Math.floor(Math.random() * 19 + 1) * box,
+                        y: Math.floor(Math.random() * 19 + 1) * box
+                    };
+                } else {
+                    // If the snake didn't eat food, remove the last part of the tail to keep the same length
+                    snake.pop();
+                }
+
+                changingDirection = false;
+            }
+
+            function startGame() {
+                speed = parseInt($('#speed').val());
+                if (game) clearInterval(game);
+                game = setInterval(draw, 1000 / speed); // Adjust speed here
+                gameOverMsg.hide(); // Hide game over message when starting new game
+            }
+
+            $('#startBtn').click(startGame); // Start game when start button is clicked
+
+            $('#restartBtn').click(function() {
+                gameOverMsg.hide(); // Hide game over message
+                snake = [{ x: 9 * box, y: 10 * box }]; // Reset snake position
+                direction = 'RIGHT'; // Reset direction
+                food = {
+                    x: Math.floor(Math.random() * 19 + 1) * box,
+                    y: Math.floor(Math.random() * 19 + 1) * box
+                }; // Generate new food location
+                startGame(); // Start game again
+            });
+        });
+    </script>
+  </body>
+</html>
